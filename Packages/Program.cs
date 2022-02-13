@@ -43,7 +43,7 @@ public class Program
             }
         }, 60, cts.Token);
 
-        app.MapGet("/updates/{amount?}", (CzSoftDatabaseContext db, int? amount) =>
+        app.MapGet("/updates/{amount?}", (int? amount) =>
         {
             //return db.Products.ToList();
             //if (AllPackages != packageList.Count)
