@@ -19,6 +19,7 @@ public class CzSoftDatabaseContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
+        if (ConnectionString is not null) optionsBuilder.UseSqlServer(ConnectionString);
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
