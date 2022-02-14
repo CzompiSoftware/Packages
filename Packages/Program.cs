@@ -28,7 +28,7 @@ public class Program
         TaskHelper.RecurringTask(() => GetPackageList(new(db)), 600, cts.Token);
 
         app.MapGet("/latest", GetLatest);
-        app.MapGet("/updates/{amount?)", GetUpdates);
+        app.MapGet("/updates/{amount?}", GetUpdates);
 
         app.Run();
     }
