@@ -1,6 +1,6 @@
 ﻿using System.Collections;
 
-internal class PackageList : ErrorRequest, IList<Package>
+internal class PackageList : ErrorResponse, IList<Package>
 {
     private readonly IList<Package> _packages = new List<Package>();
 
@@ -69,6 +69,6 @@ internal class PackageList : ErrorRequest, IList<Package>
         return _packages.GetEnumerator();
     }
 
-    internal static PackageList FromEnumerable(IEnumerable<Package> enumerable) => new PackageList(enumerable.ToList());
-    internal static PackageList FromList(IList<Package> list) => new PackageList(list);
+    internal static PackageList FromEnumerable(IEnumerable<Package> enumerable) => new(enumerable.ToList());
+    internal static PackageList FromList(IList<Package> list) => new(list);
 }

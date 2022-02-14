@@ -14,12 +14,18 @@ using System.Collections.Generic;
 
 public class Package
 {
-    public Package(NuGetClient client, SearchResult searchResult, string version = null)
+    public Package()
+    {
+    }
+
+    internal Package(NuGetClient client, SearchResult searchResult, string version = null) : base()
     {
         version ??= searchResult.Version;
-
         Id = searchResult.PackageId;
-        Name = string.IsNullOrEmpty(searchResult.Title) ? searchResult.Title: searchResult.PackageId;
+        Name = !string.IsNullOrEmpty(searchResult.Title) ? searchResult.Title: searchResult.PackageId;
+        Summary = searchResult.Summary;
+        Tags = searchResult.Tags;
+        Source = searchResult.ProjectUrl;
         LogoUrl = searchResult.IconUrl;
         Authors = searchResult.Authors;
         Description = searchResult.Description;
@@ -42,10 +48,15 @@ public class Package
         {
             throw new PackageNotFoundException(Id, new(Version));
         }
+
+        Console.WriteLine($"[NUGET] Package '{Name}' with version '{Version}' added successfully.");
     }
 
     public string Id { get; set; }
     public string Name { get; set; }
+    public string Summary { get; set; }
+    public IReadOnlyList<string> Tags { get; set; }
+    public string Source { get; set; }
     public string LogoUrl { get; set; }
     public string Description { get; set; }
     public IReadOnlyList<string> Authors { get; set; }

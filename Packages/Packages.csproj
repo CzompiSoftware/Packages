@@ -9,6 +9,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <None Remove="ErrorResponse.cs~RF15387421.TMP" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<PackageReference Include="BaGet.Protocol" Version="0.4.0-preview2" />
 		<PackageReference Include="CzomPack" Version="3.0.7" />
 		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.14.0" />

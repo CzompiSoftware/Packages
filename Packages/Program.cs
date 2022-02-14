@@ -1,12 +1,14 @@
 using BaGet.Protocol;
 using BaGet.Protocol.Models;
 using CzSoft.Database;
+using CzSoft.Database.Model;
 using Microsoft.EntityFrameworkCore;
 using NuGet.Versioning;
 
 namespace Packages;
 public class Program
 {
+    static PackageList PackageList = new();
     public static void Main(string[] args)
     {
         var cts = new CancellationTokenSource();
@@ -20,106 +22,150 @@ public class Program
 
         NuGetClient client = new("https://nuget.czompisoftware.hu/v3/index.json");
         var db = builder.Configuration["CzSoftDatabase"];
-        CzSoftDatabaseContext databaseContext = new(db);
-        PackageList packageList = new();
-        int AllPackages = 0;
-        TaskHelper.RecurringTask(async () =>
-        {
-            var packages = await client.SearchAsync();
-            AllPackages = packages.Select(x => x.Versions.Count).Sum();
-            foreach (var package in packages)
-            {
-                foreach (var version in package.Versions)
-                {
+        //CzSoftDatabaseContext databaseContext = new(db);
 
-                }
-            }
-            foreach (var prodVer in await databaseContext.ProductVersions.ToListAsync())
-            {
-                var pkg = packages.FirstOrDefault(pkg => pkg.PackageId == prodVer.Product.Name);
-                var pkgVer = pkg.Versions.First(ver => ver.Version.Equals(prodVer.Name));
-                packageList.Add(new(prodVer, pkgVer.Downloads, pkg.TotalDownloads));
-                AddProductAndVersion(client, databaseContext, package, version);
-            }
-        }, 60, cts.Token);
+        TaskHelper.RecurringTask(() => UpdatePackages(client, new(db)), 600, cts.Token);
+        TaskHelper.RecurringTask(() => GetPackageList(new(db)), 600, cts.Token);
 
-        app.MapGet("/updates/{amount?}", (int? amount) =>
-        {
-            //return db.Products.ToList();
-            //if (AllPackages != packageList.Count)
-            //{
-            //    return new ErrorRequest { Status = "LoadingInprogress", Message = "Database is currently updating. Please try again later" };
-            //}
-            return PackageList.FromEnumerable(packageList.OrderByDescending(order => order.Published));
-        });
+        app.MapGet("/latest", GetLatest);
+        app.MapGet("/updates/{amount?)", GetUpdates);
 
-        app.MapGet("/latest", () =>
-        {
-            if (AllPackages != packageList.Count)
-            {
-                return new ErrorRequest { Status = "LoadingInprogress", Message = "Database is currently updating. Please try again later" };
-            }
-            return PackageList.FromEnumerable(packageList.GroupBy(pkg => pkg.Id).Select(grp => grp.OrderByDescending(order => order.Published).First()));
-        });
-
-        
         app.Run();
     }
 
-    private static async void AddProductAndVersion(NuGetClient client, CzSoftDatabaseContext databaseContext, SearchResult package, SearchResultVersion version)
+    #region Update packages
+    private static async void UpdatePackages(NuGetClient client, CzSoftDatabaseContext databaseContext)
     {
-        if (!await databaseContext.Products.AnyAsync(prod => prod.Name.ToLower().Equals(package.PackageId.ToLower())))
+        var tmpPkgList = new PackageList();
+        var packages = await client.SearchAsync();
+
+        foreach (var package in packages)
         {
-            await databaseContext.Products.AddAsync(new()
+            foreach (var version in package.Versions)
             {
-                Name = package.PackageId,
+                var name = !string.IsNullOrEmpty(package.Title.ToLower()) ? package.PackageId.ToLower() : package.PackageId.ToLower();
+                var hasProd = databaseContext.Products.Any(prod => prod.Name.ToLower().Equals(name));
+                //var hasProdVer = databaseContext.ProductVersions.Any(prodver => prodver.Product.Name.ToLower().Equals(package.Name.ToLower()) && prodver.Name.ToLower().Equals(package.Version.ToLower()));
+                if (!hasProd /*&& !hasProdVer*/) // If product does not exist, than it shouldn't have any versions
+                {
+                    tmpPkgList.Add(new(client, package, version.Version));
+                }
+            }
+        }
+
+        foreach (var package in tmpPkgList.OrderBy(pkg => pkg.Published))
+        {
+            AddProductAndVersion(databaseContext, package);
+        }
+
+        databaseContext.Dispose();
+    }
+
+    private static void AddProductAndVersion(CzSoftDatabaseContext databaseContext, Package package)
+    {
+        if (!databaseContext.Products.Any(prod => prod.Name.ToLower().Equals(package.Name.ToLower())))
+        {
+            databaseContext.Products.Add(new()
+            {
+                Name = package.Id,
                 Summary = package.Summary,
                 Description = package.Description,
                 ProgrammingLanguage = "C#",
                 Authors = package.Authors,
-                Source = package.ProjectUrl,
+                Source = package.Source,
                 Tags = package.Tags,
 
                 IsPackage = true,
                 IsPublic = false,
             });
-            await databaseContext.SaveChangesAsync();
+            databaseContext.SaveChanges();
         }
 
-        var prod = await databaseContext.Products.FirstAsync(prod => prod.Name.ToLower().Equals(package.PackageId.ToLower()));
+        var prod = databaseContext.Products.First(prod => prod.Name.ToLower().Equals(package.Name.ToLower()));
 
-        if (!await databaseContext.ProductVersions.AnyAsync(prodver => prodver.Product.Name.ToLower().Equals(package.PackageId.ToLower()) && prodver.Name.ToLower().Equals(version.Version.ToLower())))
+        if (!databaseContext.ProductVersions.Any(prodver => prodver.Product.Name.ToLower().Equals(package.Name.ToLower()) && prodver.Name.ToLower().Equals(package.Version.ToLower())))
         {
             try
             {
-                PackageMetadata metadata = await client.GetPackageMetadataAsync(package.PackageId, new NuGetVersion(version.Version));
-                if (metadata is null)
-                {
-                    Console.WriteLine($"Package '{package.PackageId}' with version '{version.Version}' does not exist");
-                    return;
-                }
-                await databaseContext.ProductVersions.AddAsync(new()
+                databaseContext.ProductVersions.Add(new()
                 {
                     Product = prod,
-                    Published = metadata.Published.DateTime,
-                    Name = version.Version,
+                    Published = package.Published,
+                    Name = package.Version,
                 });
-                await databaseContext.SaveChangesAsync();
-                Console.WriteLine($"Package '{package.PackageId}' with version '{version.Version}' added successfully.");
+                databaseContext.SaveChanges();
+                Console.WriteLine($"[MSSQL] Package '{package.Name}' with version '{package.Version}' added successfully.");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error occurred during package adding process. Package '{package.PackageId}' with version '{version.Version}' cannot be added.\r\nException: {ex}");
+                Console.WriteLine($"Error occurred during package adding process. Package '{package.Name}' with version '{package.Version}' cannot be added.\r\nException: {ex}");
             }
         }
         else
         {
-            Console.WriteLine($"Package '{package.PackageId}' with version '{version.Version}' already added, skipping.");
+            Console.WriteLine($"Package '{package.Name}' with version '{package.Version}' already added, skipping.");
         }
+        var prodVer = databaseContext.ProductVersions.First(prodVer => prodVer.Product.Name.ToLower().Equals(package.Name.ToLower()) && prodVer.Name.ToLower().Equals(package.Version.ToLower()));
+
+    }
+    #endregion
+
+    #region Get package list
+    private static void GetPackageList(CzSoftDatabaseContext databaseContext)
+    {
+        var items = databaseContext.ProductVersions.OrderByDescending(pkg => pkg.Published).ToList();
+        
+        foreach (var item in items)
+        {
+            AddPackage(item);
+        }
+
+        databaseContext.Dispose();
     }
 
-    internal static bool StringEqualsIgnoreCase(string a, string b)
+    private static void AddPackage(ProductVersion productVersion)
     {
-        return a.ToLower().Equals(b.ToLower());
+        PackageList.Add(new()
+        {
+            Name = productVersion.Product.Name,
+            Version = productVersion.Name,
+            Authors = productVersion.Product.Authors,
+            Description = productVersion.Product.Description,
+            Id = productVersion.Product.Name,
+            IsPublic = productVersion.Product.IsPublic,
+            LogoUrl = productVersion.Product.LogoUrl,
+            Published = productVersion.Published,
+            Source = productVersion.Product.Source,
+            Summary = productVersion.Product.Summary,
+            Tags = productVersion.Product.Tags,
+            //Downloads = package.Downloads,
+            //TotalDownloads = package.TotalDownloads,
+        });
     }
+    #endregion
+
+    #region Responses
+    private static IResponse GetLatest(HttpContext context, int? amount)
+    {
+        //if (AllPackages != PackageList.Count)
+        //{
+        //    return new ErrorResponse { Status = "LoadingInprogress", Message = "Database is currently updating. Please try again later" };
+        //}
+        var items = PackageList.GroupBy(pkg => pkg.Id).Select(grp => grp.OrderByDescending(order => order.Published).First());
+        if (amount != null && amount > 0) items = items.Take(amount ?? 0).ToList();
+        return PackageList.FromEnumerable(items.OrderByDescending(order => order.Published));
+    }
+
+    private static IResponse GetUpdates(HttpContext context, int? amount)
+    {
+        //if (AllPackages != PackageList.Count)
+        //{
+        //    return new ErrorResponse { Status = "LoadingInprogress", Message = "Database is currently updating. Please try again later" };
+        //}
+        var items = PackageList.OrderByDescending(order => order.Published).ToList();
+        if (amount != null && amount > 0) items = items.Take(amount ?? 0).ToList();
+        return PackageList.FromEnumerable(items.OrderByDescending(order => order.Published));
+    }
+    #endregion
+
 }
