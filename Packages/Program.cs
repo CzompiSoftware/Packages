@@ -11,6 +11,7 @@ public class Program
     {
         var cts = new CancellationTokenSource();
         var builder = WebApplication.CreateBuilder(args);
+        // TODO: Not working correctly
         var db = args.Any() && args.Length == 1 ? args[0] : builder.Configuration["CzSoftDatabase"];
 
         builder.Services.AddDbContext<CzSoftDatabaseContext>(options =>
