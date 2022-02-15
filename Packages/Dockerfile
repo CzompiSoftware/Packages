@@ -1,21 +1,18 @@
-#See https://aka.ms/containerfastmode to understand how Visual Studio uses this Dockerfile to build your images for faster debugging.
+FROM mcr.microsoft.com/dotnet/aspnet:6.0-alpine
 
-FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS base
-WORKDIR /app
+ENV \
+    # Connection string
+    CONNECTION_STRING="" \
+    # Packages version
+    PACKAGES_VERSION=1.0.0-build01
+
+# VOLUME [ "/data" ]
+
+
+# Download Packages binaries
+RUN wget https://packages.czompi.cloud/products/czsoft/packages/$PACKAGES_VERSION.tar.gz -O packages.tar.gz \
+    && tar -ozxf packages.tar.gz -C /bin \
+    && rm packages.tar.gz
+WORKDIR /bin
 EXPOSE 80
-
-FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
-WORKDIR /src
-COPY ["Packages/Packages.csproj", "Packages/"]
-RUN dotnet restore "Packages/Packages.csproj"
-COPY . .
-WORKDIR "/src/Packages"
-RUN dotnet build "Packages.csproj" -c Release -o /app/build
-
-FROM build AS publish
-RUN dotnet publish "Packages.csproj" -c Release -o /app/publish
-
-FROM base AS final
-WORKDIR /app
-COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "Packages.dll"]
+ENTRYPOINT ["dotnet", "Packages.dll", $CONNECTION_STRING]
