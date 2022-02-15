@@ -5,7 +5,8 @@ internal class TaskHelper
     {
         if (action == null)
             return;
-        Task.Run(async () => {
+        Task.Run(async () =>
+        {
             while (!token.IsCancellationRequested)
             {
                 action();

@@ -1,9 +1,7 @@
 using BaGet.Protocol;
-using BaGet.Protocol.Models;
 using CzSoft.Database;
 using CzSoft.Database.Model;
 using Microsoft.EntityFrameworkCore;
-using NuGet.Versioning;
 
 namespace Packages;
 public class Program
@@ -13,7 +11,7 @@ public class Program
     {
         var cts = new CancellationTokenSource();
         var builder = WebApplication.CreateBuilder(args);
-        var db = builder.Configuration["CzSoftDatabase"];
+        var db = args.Any() && args.Length == 1 ? args[0] : builder.Configuration["CzSoftDatabase"];
 
         builder.Services.AddDbContext<CzSoftDatabaseContext>(options =>
         {
@@ -62,7 +60,7 @@ public class Program
         }
 
         databaseContext.Dispose();
-       
+
     }
 
     private static void AddProductAndVersion(CzSoftDatabaseContext databaseContext, Package package)
@@ -118,8 +116,8 @@ public class Program
     #region Get package list
     private static void GetPackageList(CzSoftDatabaseContext databaseContext)
     {
-        var items = databaseContext.ProductVersions.Include(x=>x.Product).ToList().OrderByDescending(pkg => pkg.Published).ToList();
-        
+        var items = databaseContext.ProductVersions.Include(x => x.Product).ToList().OrderByDescending(pkg => pkg.Published).ToList();
+
         foreach (var item in items)
         {
             AddPackage(item);

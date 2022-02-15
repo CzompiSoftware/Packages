@@ -8,9 +8,7 @@
 
 using BaGet.Protocol;
 using BaGet.Protocol.Models;
-using CzSoft.Database.Model;
 using NuGet.Versioning;
-using System.Collections.Generic;
 
 public class Package
 {
@@ -22,7 +20,7 @@ public class Package
     {
         version ??= searchResult.Version;
         Id = searchResult.PackageId;
-        Name = !string.IsNullOrEmpty(searchResult.Title) ? searchResult.Title: searchResult.PackageId;
+        Name = !string.IsNullOrEmpty(searchResult.Title) ? searchResult.Title : searchResult.PackageId;
         Summary = searchResult.Summary;
         Tags = searchResult.Tags;
         Source = searchResult.ProjectUrl;
