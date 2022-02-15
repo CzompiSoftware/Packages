@@ -2,16 +2,12 @@
 
 	<PropertyGroup>
 		<TargetFramework>net6.0</TargetFramework>
-		<Nullable>enable</Nullable>
+		<Version>1.0.0.1</Version>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
 		<UserSecretsId>d7de97aa-315d-4b01-89d5-c100e6f9ec54</UserSecretsId>
 	</PropertyGroup>
-
-	<ItemGroup>
-	  <None Remove="ErrorResponse.cs~RF15387421.TMP" />
-	</ItemGroup>
-
+	
 	<ItemGroup>
 		<PackageReference Include="BaGet.Protocol" Version="0.4.0-preview2" />
 		<PackageReference Include="CzomPack" Version="3.0.7" />
@@ -25,4 +21,10 @@
 		<ProjectReference Include="..\CzSoft.Database\CzSoft.Database.csproj" />
 	</ItemGroup>
 
+	<Target Name="Date" BeforeTargets="BeforeBuild">
+		<WriteLinesToFile File="$(IntermediateOutputPath)Builtin.cs" Lines="using System%3B%0D%0Anamespace $(RootNamespace)%0D%0A{%0D%0A	static partial class Builtin%0D%0A	{%0D%0A		public static DateTime CompileTime = DateTime.Parse(%22$([System.DateTime]::Now.ToString())%22)%3B%0D%0A		public static Guid BuildId = Guid.Parse(%22$([System.Guid]::NewGuid())%22)%3B%0D%0A		}%0D%0A}" Overwrite="true" />
+		<ItemGroup>
+			<Compile Include="$(IntermediateOutputPath)Builtin.cs" />
+		</ItemGroup>
+	</Target>
 </Project>

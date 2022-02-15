@@ -13,21 +13,21 @@ public class Program
     {
         var cts = new CancellationTokenSource();
         var builder = WebApplication.CreateBuilder(args);
+        var db = builder.Configuration["CzSoftDatabase"];
+
         builder.Services.AddDbContext<CzSoftDatabaseContext>(options =>
         {
-            options.UseSqlServer(builder.Configuration["CzSoftDatabase"]);
+            options.UseSqlServer(db);
         }, contextLifetime: ServiceLifetime.Transient, optionsLifetime: ServiceLifetime.Singleton);
 
         var app = builder.Build();
 
         NuGetClient client = new("https://nuget.czompisoftware.hu/v3/index.json");
-        var db = builder.Configuration["CzSoftDatabase"];
-        //CzSoftDatabaseContext databaseContext = new(db);
 
         TaskHelper.RecurringTask(() => UpdatePackages(client, new(db)), 600, cts.Token);
         TaskHelper.RecurringTask(() => GetPackageList(new(db)), 600, cts.Token);
 
-        app.MapGet("/latest", GetLatest);
+        app.MapGet("/latest/{amount?}", GetLatest);
         app.MapGet("/updates/{amount?}", GetUpdates);
 
         app.Run();
@@ -36,19 +36,22 @@ public class Program
     #region Update packages
     private static async void UpdatePackages(NuGetClient client, CzSoftDatabaseContext databaseContext)
     {
-        var tmpPkgList = new PackageList();
+        PackageList tmpPkgList = new();
         var packages = await client.SearchAsync();
 
         foreach (var package in packages)
         {
             foreach (var version in package.Versions)
             {
-                var name = !string.IsNullOrEmpty(package.Title.ToLower()) ? package.PackageId.ToLower() : package.PackageId.ToLower();
-                var hasProd = databaseContext.Products.Any(prod => prod.Name.ToLower().Equals(name));
-                //var hasProdVer = databaseContext.ProductVersions.Any(prodver => prodver.Product.Name.ToLower().Equals(package.Name.ToLower()) && prodver.Name.ToLower().Equals(package.Version.ToLower()));
-                if (!hasProd /*&& !hasProdVer*/) // If product does not exist, than it shouldn't have any versions
+                string name = !string.IsNullOrEmpty(package.Title.ToLower()) ? package.PackageId.ToLower() : package.PackageId.ToLower();
+                bool hasProd = databaseContext.Products.Any(prod => prod.Name.ToLower().Equals(name));
+                if (!hasProd) // If product does not exist, than it shouldn't have any versions
                 {
                     tmpPkgList.Add(new(client, package, version.Version));
+                }
+                else
+                {
+                    Console.WriteLine($"Package '{name}' with version '{version.Version}' already added, skipping.");
                 }
             }
         }
@@ -59,6 +62,7 @@ public class Program
         }
 
         databaseContext.Dispose();
+       
     }
 
     private static void AddProductAndVersion(CzSoftDatabaseContext databaseContext, Package package)
@@ -90,6 +94,7 @@ public class Program
                 databaseContext.ProductVersions.Add(new()
                 {
                     Product = prod,
+                    ProductId = prod.Id,
                     Published = package.Published,
                     Name = package.Version,
                 });
@@ -113,7 +118,7 @@ public class Program
     #region Get package list
     private static void GetPackageList(CzSoftDatabaseContext databaseContext)
     {
-        var items = databaseContext.ProductVersions.OrderByDescending(pkg => pkg.Published).ToList();
+        var items = databaseContext.ProductVersions.Include(x=>x.Product).ToList().OrderByDescending(pkg => pkg.Published).ToList();
         
         foreach (var item in items)
         {
