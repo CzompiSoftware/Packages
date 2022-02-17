@@ -1,6 +1,6 @@
 ﻿namespace CzomPack.Attributes;
 
 [AttributeUsage(AttributeTargets.Class)]
-public class ToStringAttribute : Attribute
+public class ExecutableAttribute : Attribute
 {
 }

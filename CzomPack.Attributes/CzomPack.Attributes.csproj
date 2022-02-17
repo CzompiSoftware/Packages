@@ -1,10 +1,16 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFrameworks>netstandard2.0;net6.0</TargetFrameworks>
+		<TargetFrameworks>net6.0</TargetFrameworks>
 		<ImplicitUsings>enable</ImplicitUsings>
-		<Nullable>enable</Nullable>
 		<LangVersion>10.0</LangVersion>
+		<Version>1.0.1</Version>
 	</PropertyGroup>
-
+	
+	<ItemGroup>
+		<PackageReference Include="CzomPack" Version="3.0.7.1" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\CzomPack.SourceGenerator\CzomPack.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+	</ItemGroup>
 </Project>

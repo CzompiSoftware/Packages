@@ -11,6 +11,7 @@
   "profiles": {
     "Packages": {
       "commandName": "Project",
+      "commandLineArgs": "--connectionString Data Source=eu-central-0.czompi.cloud;Initial Catalog=CzSoft;Persist Security Info=True;User ID=sa;Password=mWqhHC2$&j24%&W5",
       "launchBrowser": true,
       "launchUrl": "updates",
       "environmentVariables": {

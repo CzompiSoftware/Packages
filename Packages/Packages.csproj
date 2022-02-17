@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<TargetFramework>net6.0</TargetFramework>
-		<Version>1.0.0.1</Version>
+		<Version>1.0.0.4</Version>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
 		<UserSecretsId>d7de97aa-315d-4b01-89d5-c100e6f9ec54</UserSecretsId>
@@ -10,7 +10,7 @@
 	
 	<ItemGroup>
 		<PackageReference Include="BaGet.Protocol" Version="0.4.0-preview2" />
-		<PackageReference Include="CzomPack" Version="3.0.7" />
+		<PackageReference Include="CzomPack" Version="3.0.7.1" />
 		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.14.0" />
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.0.1" />
 	</ItemGroup>

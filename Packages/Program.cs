@@ -1,18 +1,22 @@
 using BaGet.Protocol;
+using CzomPack.Attributes;
 using CzSoft.Database;
 using CzSoft.Database.Model;
 using Microsoft.EntityFrameworkCore;
 
 namespace Packages;
-public class Program
+
+[Executable]
+public partial class Program
 {
-    static PackageList PackageList = new();
-    public static void Main(string[] args)
+    static readonly PackageList PackageList = new();
+    static partial void Main(Arguments args)
     {
+        Console.WriteLine(args.ToString());
         var cts = new CancellationTokenSource();
-        var builder = WebApplication.CreateBuilder(args);
+        var builder = WebApplication.CreateBuilder(args.GetArgumentList());
         // TODO: Not working correctly
-        var db = args.Any() && args.Length == 1 ? args[0] : builder.Configuration["CzSoftDatabase"];
+        var db = args.Any() && args.ContainsName("connectionString") ? args.WithName("connectionString") : builder.Configuration["CzSoftDatabase"];
 
         builder.Services.AddDbContext<CzSoftDatabaseContext>(options =>
         {

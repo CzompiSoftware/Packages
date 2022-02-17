@@ -6,7 +6,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="CzomPack" Version="3.0.7" />
+		<PackageReference Include="CzomPack" Version="3.0.7.1" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.2" />
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.0.1" /> 
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.2">

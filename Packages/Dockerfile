@@ -4,7 +4,7 @@ ENV \
     # Connection string
     CONNECTION_STRING="" \
     # Packages version
-    PACKAGES_VERSION=1.0.0-build01
+    PACKAGES_VERSION=1.0.0-build03
 
 # VOLUME [ "/data" ]
 
@@ -15,4 +15,4 @@ RUN wget https://packages.czompi.cloud/products/czsoft/packages/$PACKAGES_VERSIO
     && rm packages.tar.gz
 WORKDIR /bin
 EXPOSE 80
-ENTRYPOINT ["dotnet", "Packages.dll", "$CONNECTION_STRING"]
+ENTRYPOINT ["dotnet", "Packages.dll", "--connectionString", "$CONNECTION_STRING"]
