@@ -1,5 +1,4 @@
-﻿using CzomPack.Extensions;
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace CzomPack.SourceGenerator;
@@ -18,7 +17,7 @@ public class AttributeFinder : ISyntaxReceiver
     {
         if (syntaxNode is ClassDeclarationSyntax @class)
         {
-            if (@class.AttributeLists.Any(al => al.Attributes.Any(a => a.Name.ToString().EqualsIgnoreCase($"{Name}Attribute") || a.Name.ToString().EqualsIgnoreCase($"{Name}"))))
+            if (@class.AttributeLists.Any(al => al.Attributes.Any(a => a.Name.ToString().ToLower().Equals($"{Name}Attribute".ToLower()) || a.Name.ToString().ToLower().Equals($"{Name}".ToLower()))))
             {
                 Classes.Add(@class);
             }

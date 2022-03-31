@@ -4,13 +4,28 @@
 		<TargetFrameworks>net6.0</TargetFrameworks>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<LangVersion>10.0</LangVersion>
-		<Version>1.0.1</Version>
+		<Version>1.0.2</Version>
+		<Authors>Czompi</Authors>
+		<Company>Czompi Software</Company>
+		<Product>CzomPack.Attributes</Product>
+		<Copyright>Czompi Software 2022</Copyright>
+		<Description>Source generator by Czompi Software.</Description>
+		<PackageId>CzomPack.Attributes</PackageId>
+		<RootNamespace>CzomPack.Attributes</RootNamespace>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 	</PropertyGroup>
-	
+
 	<ItemGroup>
+		<PackageReference Include="SS.NuGet.Publish" Version="1.0.1912.22">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
 		<PackageReference Include="CzomPack" Version="3.0.7.1" />
+		<PackageReference Include="CzomPack.SourceGenerator" Version="1.0.1" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
 	</ItemGroup>
-	<ItemGroup>
-		<ProjectReference Include="..\CzomPack.SourceGenerator\CzomPack.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-	</ItemGroup>
+
+	<PropertyGroup Condition="'$(Configuration)'=='Release'">
+		<NuGetPublishType>remote</NuGetPublishType>
+		<NuGetPublishLocation>https://nuget.czompisoftware.hu/v3/index.json</NuGetPublishLocation>
+	</PropertyGroup>
 </Project>
